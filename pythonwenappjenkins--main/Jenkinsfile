@@ -1,5 +1,6 @@
 pipeline {
     agent any
+
     environment {
         AZURE_CREDENTIALS_ID = 'azure-service-principal'
         RESOURCE_GROUP = 'myResourceGroup'
@@ -10,23 +11,29 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/esha1401/pythonPipeline.git'
+                git branch: 'main', url: 'https://github.com/Avinash739jecrc/pythonwenappjenkins.git'
             }
         }
 
-        stage('Set Up Python') {
+        stage('Set Up Python Environment') {
             steps {
-                bat 'python -m venv venv'
-                bat 'call venv\\Scripts\\activate && pip install --upgrade pip && pip install -r requirements.txt'
+                bat '''
+                    python -m venv venv
+                    call venv\\Scripts\\activate
+                    python -m pip install --upgrade pip
+                    pip install -r requirements.txt
+                '''
             }
         }
 
         stage('Prepare Publish Folder') {
             steps {
-                bat 'if exist publish (rmdir /s /q publish)'
-                bat 'mkdir publish'
-                bat 'copy *.py publish\\'
-                bat 'if exist requirements.txt copy requirements.txt publish\\'
+                bat '''
+                    if exist publish (rmdir /s /q publish)
+                    mkdir publish
+                    copy *.py publish\\
+                    if exist requirements.txt copy requirements.txt publish\\
+                '''
             }
         }
 
@@ -39,8 +46,10 @@ pipeline {
         stage('Deploy to Azure') {
             steps {
                 withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
-                    bat 'az login --service-principal -u %AZURE_CLIENT_ID% -p %AZURE_CLIENT_SECRET% --tenant %AZURE_TENANT_ID%'
-                    bat 'az webapp deployment source config-zip --resource-group %RESOURCE_GROUP% --name %APP_SERVICE_NAME% --src publish.zip'
+                    bat '''
+                        az login --service-principal -u %AZURE_CLIENT_ID% -p %AZURE_CLIENT_SECRET% --tenant %AZURE_TENANT_ID%
+                        az webapp deployment source config-zip --resource-group %RESOURCE_GROUP% --name %APP_SERVICE_NAME% --src publish.zip
+                    '''
                 }
             }
         }
